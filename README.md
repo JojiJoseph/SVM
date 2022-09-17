@@ -10,6 +10,6 @@ Support vector machine from scratch.
 # TODO
 
 - [x] Hard margin SVC
-- [] Soft margin SVC
-- [] SVR
-- [] Multiclass SVC
+- [ ] Soft margin SVC
+- [ ] SVR
+- [ ] Multiclass SVC
