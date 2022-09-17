@@ -1,14 +1,17 @@
 import numpy as np
-from svm import SVC
-from svm import polynomial_kernel
+from svm import SVC_soft_margin
+from svm import rbf_kernel
 import matplotlib.pyplot as plt
 
-svc = SVC(polynomial_kernel(gamma=0.1, r=1, d=3))
+svc = SVC_soft_margin(rbf_kernel(gamma=0.5), C=0.1)
 
 X_train = np.random.randint(-10, 10, size=(700, 2))
+# y_train = np.sign(np.dot(X_train, [5, 3]))
 y_train = np.sign(X_train[:, 0]**2+X_train[:, 1]**2 - 25.2)
+# print("s", sum(y_train==0))
 
 X_test = np.random.randint(-10, 10, size=(200, 2))
+# y_test = np.sign(np.dot(X_test, [5, 3]))
 y_test = np.sign(X_test[:, 0]**2+X_test[:, 1]**2 - 25.2)
 
 svc.fit(X_train, y_train)
