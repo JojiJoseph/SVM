@@ -11,7 +11,7 @@ Support vector machine from scratch.
 
 - [ ] Hard margin SVC - Getting errors while optimization
 - [x] Soft margin SVC
-- [ ] SVR
+- [x] SVR
 - [x] Multiclass SVC (One-v-One)
 
 Low priority

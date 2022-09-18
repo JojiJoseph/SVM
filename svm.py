@@ -164,3 +164,62 @@ class SVC_multiclass:
             prediction.append(np.argmax(votes))
         return prediction 
 
+class SVR:
+    def __init__(self, kernel=linear_kernel(), C=10, eps=1) -> None:
+        self.kernel = kernel
+        self.C = C
+        self.eps = eps
+    def fit(self, X_train, y_train): # y_train should be flattened
+        P = self.kernel(X_train, X_train)
+        P = np.hstack([P, -P])
+        P = np.vstack([P, -P])
+        # print(P.shape)
+        # q = (self.eps-y_train).reshape((-1,1))
+        q = np.hstack([self.eps-y_train, self.eps+y_train]).reshape((-1,1))
+        G1 = np.eye(len(q))
+        G2 = -G1
+        G = np.vstack([G1,G2])
+        # G = np.hstack([G, np.zeros_like(G)])
+        # print("G", G.shape)
+        h = np.vstack([self.C*np.ones((len(y_train)*2,1)),np.zeros((len(y_train)*2,1))])
+        # print(h.shape)
+        A = np.array([1]*len(y_train) + [-1]*len(y_train)).reshape((1,-1))
+        B = 0.
+        print(A.shape)
+        P = matrix(P.astype(float))
+        q = matrix(q.astype(float))
+        G = matrix(G.astype(float))
+        h = matrix(h.astype(float))
+        A = matrix(A.astype(float))
+        B = matrix(B)
+        alpha = qp(P, q, G, h, A, B, verbose=False)['x']
+        alpha = np.array(alpha).flatten()
+        self.alpha = []
+        self.alpha_star = []
+        alpha, alpha_star = alpha[:len(alpha)//2], alpha[len(alpha)//2:]
+        self.X_train = []
+        self.y_train = []
+        for a, a_s, X, y in zip(alpha, alpha_star, X_train, y_train):
+            if 0 < a <= self.C and 0 < a_s <= self.C:
+                self.alpha.append(a)
+                self.alpha_star.append(a_s)
+                self.X_train.append(X)
+                self.y_train.append(y)
+        self.alpha = np.array(self.alpha).reshape((-1,1))
+        self.alpha_star = np.array(self.alpha_star).reshape((-1,1))
+        self.X_train = np.array(self.X_train)
+        self.y_train = np.array(self.y_train).reshape((-1,1))
+        self.b = np.mean(self.y_train-np.sum((self.alpha-self.alpha_star).T *self.kernel(self.X_train, self.X_train), axis=1))
+        print(self.b)
+        # self.b = 0
+
+
+        
+    def predict(self, X):
+        print((self.alpha-self.alpha_star).T.shape )
+        y = (self.alpha-self.alpha_star).T * self.kernel(X,self.X_train)
+        print(y.shape, X.shape)
+        y = np.sum(y, axis=1) +  self.b
+        print(y.shape)
+        # y = np.sign(y).reshape((-1, 1))
+        return y
