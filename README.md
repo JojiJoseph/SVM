@@ -9,7 +9,7 @@ Support vector machine from scratch.
 
 # TODO
 
-- [x] Hard margin SVC
+- [ ] Hard margin SVC - Getting errors while optimization
 - [x] Soft margin SVC
 - [ ] SVR
 - [ ] Multiclass SVC

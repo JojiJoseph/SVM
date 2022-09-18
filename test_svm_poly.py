@@ -3,7 +3,7 @@ from svm import SVC
 from svm import polynomial_kernel
 import matplotlib.pyplot as plt
 
-svc = SVC(polynomial_kernel(gamma=0.1, r=1, d=3))
+svc = SVC(polynomial_kernel(gamma=1, r=2, d=2), C=1)
 
 X_train = np.random.randint(-10, 10, size=(700, 2))
 y_train = np.sign(X_train[:, 0]**2+X_train[:, 1]**2 - 25.2)
@@ -38,7 +38,6 @@ print("Test Accuracy", acc_test)
 
 x_plus = np.array(x_plus)
 x_minus = np.array(x_minus)
-print(x_plus.shape, x_minus.shape)
 plt.scatter(x_plus[:, 0], x_plus[:, 1], label="+")
 plt.scatter(x_minus[:, 0], x_minus[:, 1], label="-")
 plt.legend()

@@ -1,15 +1,15 @@
 import numpy as np
-from svm import SVC
+from svm import SVC, SVC_soft_margin
 from svm import rbf_kernel
 import matplotlib.pyplot as plt
 
 
 # Create dataset
 X_train = np.random.randint(-10, 10, size=(700, 2))
-y_train = np.sign(np.dot(X_train, [5, 3]))
+y_train = np.sign(np.dot(X_train, [5, 3]) + 5)
 
 X_test = np.random.randint(-10, 10, size=(200, 2))
-y_test = np.sign(np.dot(X_test, [5, 3]))
+y_test = np.sign(np.dot(X_test, [5, 3]) + 5)
 
 
 # Fit SVM classifier
