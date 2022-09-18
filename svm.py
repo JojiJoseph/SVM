@@ -5,11 +5,12 @@ from cvxopt import matrix
 
 
 # Uncomment following change settings of the solver
-# from cvxopt import solvers
-# solvers.options['abstol'] = _____
-# solvers.options['reltol'] = _____
+from cvxopt import solvers
+# solvers.options['abstol'] = 1e-100
+# solvers.options['reltol'] = 1e-100
 # solvers.options['refinement'] = _____
 # solvers.options['feastol'] = _____
+solvers.options['show_progress'] = False
 
 def rbf_kernel(gamma=1):
     def kernel(x_left, x_right):
@@ -102,7 +103,7 @@ class SVC_soft_margin:
         h = matrix(h.astype(float))
         A = matrix(A.astype(float))
         B = matrix(B)
-        alpha = qp(P, q, G, h, A, B)['x']
+        alpha = qp(P, q, G, h, A, B, verbose=False)['x']
         alpha = np.array(alpha)
 
         alpha[alpha < 0] = 0
@@ -126,3 +127,40 @@ class SVC_soft_margin:
         return y
 
 SVC = SVC_soft_margin
+
+class SVC_multiclass:
+    def __init__(self, kernel=linear_kernel(), C=1) -> None:
+        self.kernel = kernel
+        self.C = C
+    def fit(self, X_train, y_train):
+        data = {}
+        for X, y in zip(X_train, y_train):
+            y = y[0]
+            if y in data:
+                data[y].append(X)
+            else:
+                data[y] = [X]
+        n = len(data.keys())
+        self.data = data
+        self.svms = {}
+        for i in range(n-1):
+            for j in range(i+1,n):
+                svm = SVC(self.kernel, self.C)
+                X = np.vstack([data[i],data[j]])
+                Y = np.vstack([np.ones((len(data[i]),1)), -np.ones((len(data[j]),1))])
+                svm.fit(X,Y)
+                self.svms[(i,j)] = svm
+    def predict(self, X):
+        prediction = []
+        n = len(self.data.keys())
+        for x in X:
+            votes = [0] * n
+            for i in range(n):
+                for j in range(i+1, n):
+                    if self.svms[(i,j)].predict([x]) > 0:
+                        votes[i] += 1
+                    else:
+                        votes[j] += 1
+            prediction.append(np.argmax(votes))
+        return prediction 
+

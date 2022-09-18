@@ -12,4 +12,7 @@ Support vector machine from scratch.
 - [ ] Hard margin SVC - Getting errors while optimization
 - [x] Soft margin SVC
 - [ ] SVR
-- [ ] Multiclass SVC
+- [x] Multiclass SVC (One-v-One)
+
+Low priority
+ - [ ] Speedup RBF kernel
