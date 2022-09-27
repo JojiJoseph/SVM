@@ -107,21 +107,21 @@ class SVC_soft_margin:
         alpha = np.array(alpha)
 
         alpha[alpha < 0] = 0
-        self.alpha = []
-        self.X_train = []
-        self.y_train = []
+        self.alpha_support = []
+        self.X_support = []
+        self.y_support = []
         for x, y, a in zip(X_train, y_train, alpha):
             if a:
-                self.X_train.append(x)
-                self.y_train.append(y)
-                self.alpha.append(a)
-        self.X_train = np.array(self.X_train)
-        self.y_train = np.array(self.y_train).reshape((-1, 1))
-        self.alpha = np.array(self.alpha).reshape((-1, 1))
-        self.b = np.mean(self.y_train-np.sum((self.alpha*self.y_train).T *self.kernel(self.X_train, self.X_train), axis=1))
+                self.X_support.append(x)
+                self.y_support.append(y)
+                self.alpha_support.append(a)
+        self.X_support = np.array(self.X_support)
+        self.y_support = np.array(self.y_support).reshape((-1, 1))
+        self.alpha_support = np.array(self.alpha_support).reshape((-1, 1))
+        self.b = np.mean(self.y_support-np.sum((self.alpha_support*self.y_support).T *self.kernel(self.X_support, self.X_support), axis=1))
 
     def predict(self, X):
-        y = (self.alpha*self.y_train).T * self.kernel(X, self.X_train)
+        y = (self.alpha_support*self.y_support).T * self.kernel(X, self.X_support)
         y = np.sum(y, axis=1) +  self.b
         y = np.sign(y).reshape((-1, 1))
         return y
@@ -194,26 +194,26 @@ class SVR:
         self.alpha = []
         self.alpha_star = []
         alpha, alpha_star = alpha[:len(alpha)//2], alpha[len(alpha)//2:]
-        self.X_train = []
-        self.y_train = []
+        self.X_support = []
+        self.y_support = []
         for a, a_s, X, y in zip(alpha, alpha_star, X_train, y_train):
             if 0 < a <= self.C and 0 < a_s <= self.C:
                 self.alpha.append(a)
                 self.alpha_star.append(a_s)
-                self.X_train.append(X)
-                self.y_train.append(y)
+                self.X_support.append(X)
+                self.y_support.append(y)
         self.alpha = np.array(self.alpha).reshape((-1,1))
         self.alpha_star = np.array(self.alpha_star).reshape((-1,1))
-        self.X_train = np.array(self.X_train)
-        self.y_train = np.array(self.y_train).reshape((-1,1))
-        self.b = np.mean(self.y_train-np.sum((self.alpha-self.alpha_star).T *self.kernel(self.X_train, self.X_train), axis=1))
+        self.X_support = np.array(self.X_support)
+        self.y_support = np.array(self.y_support).reshape((-1,1))
+        self.b = np.mean(self.y_support-np.sum((self.alpha-self.alpha_star).T *self.kernel(self.X_support, self.X_support), axis=1))
 
 
 
         
     def predict(self, X):
 
-        y = (self.alpha-self.alpha_star).T * self.kernel(X,self.X_train)
+        y = (self.alpha-self.alpha_star).T * self.kernel(X,self.X_support)
 
         y = np.sum(y, axis=1) +  self.b
 
