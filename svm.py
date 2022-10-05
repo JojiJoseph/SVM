@@ -1,7 +1,10 @@
+from typing import Union
+from unittest.mock import CallableMixin
 import numpy as np
 import matplotlib.pyplot as plt
 from cvxopt.solvers import qp, coneqp
 from cvxopt import matrix
+from typing import Callable
 
 
 # Uncomment following change settings of the solver
@@ -12,8 +15,8 @@ from cvxopt import solvers
 # solvers.options['feastol'] = _____
 solvers.options['show_progress'] = False
 
-def rbf_kernel(gamma=1):
-    def kernel(x_left, x_right):
+def rbf_kernel(gamma: float=1):
+    def kernel(x_left, x_right) ->np.ndarray:
         res = []
         for x1 in x_left:
             row = []
@@ -33,17 +36,17 @@ def polynomial_kernel(gamma=1, r=1, d=2):
 
 
 class SVC_hard_margin:
-    def __init__(self, kernel=linear_kernel()) -> None:
+    def __init__(self, kernel: Callable=linear_kernel()) -> None:
         self.kernel = kernel
 
-    def fit(self, X_train, y_train):
+    def fit(self, X_train: Union[np.ndarray, list], y_train: Union[np.ndarray, list]):
+        
         y_train = y_train.reshape((-1, 1))
         P = (y_train @ y_train.T) * self.kernel(X_train, X_train)
         q = -np.ones((len(y_train), 1))
         G = -np.eye(len(y_train))
         h = np.zeros((len(y_train), 1))
-        self.X_train = X_train
-        self.y_train = y_train
+
         P = matrix(P.astype(float))
         q = matrix(q.astype(float))
         G = matrix(G.astype(float))
@@ -83,8 +86,15 @@ class SVC_soft_margin:
         self.kernel = kernel
         self.C = C
 
-    def fit(self, X_train, y_train):
+    def fit(self, X_train: Union[np.ndarray, list], y_train: Union[np.ndarray, list]) -> None:
+        
+        # Sanitization of inputs
+        if type(X_train) == list:
+            X_train = np.array(X_train)
+        if type(y_train) == list:
+            y_train = np.array(y_train)
         y_train = y_train.reshape((-1, 1))
+        
         P = (y_train @ y_train.T) * self.kernel(X_train, X_train)
         q = -np.ones((len(y_train), 1))
         G1 = -np.eye(len(y_train))
@@ -95,8 +105,7 @@ class SVC_soft_margin:
         h = np.vstack([h1,h2])
         A = y_train.T
         B = 0.
-        self.X_train = X_train
-        self.y_train = y_train
+
         P = matrix(P.astype(float))
         q = matrix(q.astype(float))
         G = matrix(G.astype(float))
@@ -120,7 +129,7 @@ class SVC_soft_margin:
         self.alpha_support = np.array(self.alpha_support).reshape((-1, 1))
         self.b = np.mean(self.y_support-np.sum((self.alpha_support*self.y_support).T *self.kernel(self.X_support, self.X_support), axis=1))
 
-    def predict(self, X):
+    def predict(self, X: Union[np.ndarray, list])->np.ndarray:
         y = (self.alpha_support*self.y_support).T * self.kernel(X, self.X_support)
         y = np.sum(y, axis=1) +  self.b
         y = np.sign(y).reshape((-1, 1))
@@ -129,7 +138,7 @@ class SVC_soft_margin:
 SVC = SVC_soft_margin
 
 class SVC_multiclass:
-    def __init__(self, kernel=linear_kernel(), C=1) -> None:
+    def __init__(self, kernel: Callable=linear_kernel(), C: float=1) -> None:
         self.kernel = kernel
         self.C = C
     def fit(self, X_train, y_train):
@@ -142,7 +151,7 @@ class SVC_multiclass:
                 data[y] = [X]
         n = len(data.keys())
         self.data = data
-        self.svms = {}
+        self.svms: dict = {}
         for i in range(n-1):
             for j in range(i+1,n):
                 svm = SVC(self.kernel, self.C)
