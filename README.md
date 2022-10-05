@@ -16,3 +16,4 @@ Support vector machine from scratch.
 
 Low priority
  - [ ] Speedup RBF kernel
+ - [ ] Document all functions

@@ -1,9 +1,6 @@
-from ast import Call
 from typing import Union
-from unittest.mock import CallableMixin
 import numpy as np
-import matplotlib.pyplot as plt
-from cvxopt.solvers import qp, coneqp
+from cvxopt.solvers import qp
 from cvxopt import matrix
 from typing import Callable
 
@@ -42,7 +39,13 @@ class SVC_hard_margin:
         self.kernel = kernel
 
     def fit(self, X_train: Union[np.ndarray, list], y_train: Union[np.ndarray, list]):
-
+        
+        # Sanitization of inputs
+        if type(X_train) == list:
+            X_train = np.array(X_train)
+        if type(y_train) == list:
+            y_train = np.array(y_train)
+        
         y_train = y_train.reshape((-1, 1))
         P = (y_train @ y_train.T) * self.kernel(X_train, X_train)
         q = -np.ones((len(y_train), 1))
@@ -92,9 +95,9 @@ class SVC_soft_margin:
     def fit(self, X_train: Union[np.ndarray, list], y_train: Union[np.ndarray, list]) -> None:
 
         # Sanitization of inputs
-        if type(X_train) == list:
+        if isinstance(X_train,  list):
             X_train = np.array(X_train)
-        if type(y_train) == list:
+        if isinstance(y_train,  list):
             y_train = np.array(y_train)
         y_train = y_train.reshape((-1, 1))
 
@@ -169,7 +172,19 @@ class SVC_multiclass:
                 svm.fit(X, Y)
                 self.svms[(i, j)] = svm
 
-    def predict(self, X) -> np.ndarray:
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        """Predict the output
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Input features
+
+        Returns
+        -------
+        np.ndarray
+            Output
+        """
         prediction = []
         n = len(self.data.keys())
         for x in X:
@@ -224,7 +239,7 @@ class SVR:
                 self.alpha_star.append(a_s)
                 self.X_support.append(X)
                 self.y_support.append(y)
-        self.alpha = np.array(self.alpha).reshape((-1, 1))
+        self.alpha: np.ndarray = np.array(self.alpha).reshape((-1, 1))
         self.alpha_star = np.array(self.alpha_star).reshape((-1, 1))
         self.X_support = np.array(self.X_support)
         self.y_support = np.array(self.y_support).reshape((-1, 1))
