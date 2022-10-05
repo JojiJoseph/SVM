@@ -1,3 +1,4 @@
+from ast import Call
 from typing import Union
 from unittest.mock import CallableMixin
 import numpy as np
@@ -15,8 +16,9 @@ from cvxopt import solvers
 # solvers.options['feastol'] = _____
 solvers.options['show_progress'] = False
 
-def rbf_kernel(gamma: float=1):
-    def kernel(x_left, x_right) ->np.ndarray:
+
+def rbf_kernel(gamma: float = 1):
+    def kernel(x_left, x_right) -> np.ndarray:
         res = []
         for x1 in x_left:
             row = []
@@ -36,11 +38,11 @@ def polynomial_kernel(gamma=1, r=1, d=2):
 
 
 class SVC_hard_margin:
-    def __init__(self, kernel: Callable=linear_kernel()) -> None:
+    def __init__(self, kernel: Callable = linear_kernel()) -> None:
         self.kernel = kernel
 
     def fit(self, X_train: Union[np.ndarray, list], y_train: Union[np.ndarray, list]):
-        
+
         y_train = y_train.reshape((-1, 1))
         P = (y_train @ y_train.T) * self.kernel(X_train, X_train)
         q = -np.ones((len(y_train), 1))
@@ -72,29 +74,30 @@ class SVC_hard_margin:
         self.X_train = np.array(self.X_train)
         self.y_train = np.array(self.y_train).reshape((-1, 1))
         self.alpha = np.array(self.alpha).reshape((-1, 1))
-        self.b = np.mean(self.y_train-np.sum((self.alpha*self.y_train).T *self.kernel(self.X_train, self.X_train), axis=1))
+        self.b = np.mean(self.y_train-np.sum((self.alpha*self.y_train).T *
+                         self.kernel(self.X_train, self.X_train), axis=1))
 
     def predict(self, X):
         y = (self.alpha*self.y_train).T * self.kernel(X, self.X_train)
-        y = np.sum(y, axis=1)+ self.b
+        y = np.sum(y, axis=1) + self.b
         y = np.sign(y).reshape((-1, 1))
         return y
 
-        
+
 class SVC_soft_margin:
     def __init__(self, kernel=linear_kernel(), C=0.2) -> None:
         self.kernel = kernel
         self.C = C
 
     def fit(self, X_train: Union[np.ndarray, list], y_train: Union[np.ndarray, list]) -> None:
-        
+
         # Sanitization of inputs
         if type(X_train) == list:
             X_train = np.array(X_train)
         if type(y_train) == list:
             y_train = np.array(y_train)
         y_train = y_train.reshape((-1, 1))
-        
+
         P = (y_train @ y_train.T) * self.kernel(X_train, X_train)
         q = -np.ones((len(y_train), 1))
         G1 = -np.eye(len(y_train))
@@ -102,7 +105,7 @@ class SVC_soft_margin:
         h1 = np.zeros((len(y_train), 1))
         h2 = self.C*np.ones((len(y_train), 1))
         G = np.vstack([G1, G2])
-        h = np.vstack([h1,h2])
+        h = np.vstack([h1, h2])
         A = y_train.T
         B = 0.
 
@@ -127,22 +130,27 @@ class SVC_soft_margin:
         self.X_support = np.array(self.X_support)
         self.y_support = np.array(self.y_support).reshape((-1, 1))
         self.alpha_support = np.array(self.alpha_support).reshape((-1, 1))
-        self.b = np.mean(self.y_support-np.sum((self.alpha_support*self.y_support).T *self.kernel(self.X_support, self.X_support), axis=1))
+        self.b = np.mean(self.y_support-np.sum((self.alpha_support*self.y_support).T *
+                         self.kernel(self.X_support, self.X_support), axis=1))
 
-    def predict(self, X: Union[np.ndarray, list])->np.ndarray:
-        y = (self.alpha_support*self.y_support).T * self.kernel(X, self.X_support)
-        y = np.sum(y, axis=1) +  self.b
+    def predict(self, X: Union[np.ndarray, list]) -> np.ndarray:
+        y = (self.alpha_support*self.y_support).T * \
+            self.kernel(X, self.X_support)
+        y = np.sum(y, axis=1) + self.b
         y = np.sign(y).reshape((-1, 1))
         return y
 
+
 SVC = SVC_soft_margin
 
+
 class SVC_multiclass:
-    def __init__(self, kernel: Callable=linear_kernel(), C: float=1) -> None:
+    def __init__(self, kernel: Callable = linear_kernel(), C: float = 1) -> None:
         self.kernel = kernel
         self.C = C
+
     def fit(self, X_train, y_train):
-        data = {}
+        data: dict = {}
         for X, y in zip(X_train, y_train):
             y = y[0]
             if y in data:
@@ -153,43 +161,48 @@ class SVC_multiclass:
         self.data = data
         self.svms: dict = {}
         for i in range(n-1):
-            for j in range(i+1,n):
+            for j in range(i+1, n):
                 svm = SVC(self.kernel, self.C)
-                X = np.vstack([data[i],data[j]])
-                Y = np.vstack([np.ones((len(data[i]),1)), -np.ones((len(data[j]),1))])
-                svm.fit(X,Y)
-                self.svms[(i,j)] = svm
-    def predict(self, X):
+                X = np.vstack([data[i], data[j]])
+                Y = np.vstack([np.ones((len(data[i]), 1)), -
+                              np.ones((len(data[j]), 1))])
+                svm.fit(X, Y)
+                self.svms[(i, j)] = svm
+
+    def predict(self, X) -> np.ndarray:
         prediction = []
         n = len(self.data.keys())
         for x in X:
             votes = [0] * n
             for i in range(n):
                 for j in range(i+1, n):
-                    if self.svms[(i,j)].predict([x]) > 0:
+                    if self.svms[(i, j)].predict([x]) > 0:
                         votes[i] += 1
                     else:
                         votes[j] += 1
             prediction.append(np.argmax(votes))
-        return prediction 
+        return np.array(prediction)
+
 
 class SVR:
-    def __init__(self, kernel=linear_kernel(), C=10, eps=1) -> None:
+    def __init__(self, kernel: Callable = linear_kernel(), C: float = 10, eps: float = 1) -> None:
         self.kernel = kernel
         self.C = C
         self.eps = eps
-    def fit(self, X_train, y_train): # y_train should be flattened
+
+    def fit(self, X_train: np.ndarray, y_train: np.ndarray) -> None:  # y_train should be flattened
         P = self.kernel(X_train, X_train)
         P = np.hstack([P, -P])
         P = np.vstack([P, -P])
-        q = np.hstack([self.eps-y_train, self.eps+y_train]).reshape((-1,1))
+        q = np.hstack([self.eps-y_train, self.eps+y_train]).reshape((-1, 1))
         G1 = np.eye(len(q))
         G2 = -G1
-        G = np.vstack([G1,G2])
+        G = np.vstack([G1, G2])
 
-        h = np.vstack([self.C*np.ones((len(y_train)*2,1)),np.zeros((len(y_train)*2,1))])
+        h = np.vstack([self.C*np.ones((len(y_train)*2, 1)),
+                      np.zeros((len(y_train)*2, 1))])
 
-        A = np.array([1]*len(y_train) + [-1]*len(y_train)).reshape((1,-1))
+        A = np.array([1]*len(y_train) + [-1]*len(y_train)).reshape((1, -1))
         B = 0.
 
         P = matrix(P.astype(float))
@@ -211,20 +224,14 @@ class SVR:
                 self.alpha_star.append(a_s)
                 self.X_support.append(X)
                 self.y_support.append(y)
-        self.alpha = np.array(self.alpha).reshape((-1,1))
-        self.alpha_star = np.array(self.alpha_star).reshape((-1,1))
+        self.alpha = np.array(self.alpha).reshape((-1, 1))
+        self.alpha_star = np.array(self.alpha_star).reshape((-1, 1))
         self.X_support = np.array(self.X_support)
-        self.y_support = np.array(self.y_support).reshape((-1,1))
-        self.b = np.mean(self.y_support-np.sum((self.alpha-self.alpha_star).T *self.kernel(self.X_support, self.X_support), axis=1))
+        self.y_support = np.array(self.y_support).reshape((-1, 1))
+        self.b = np.mean(self.y_support-np.sum((self.alpha-self.alpha_star).T *
+                         self.kernel(self.X_support, self.X_support), axis=1))
 
-
-
-        
-    def predict(self, X):
-
-        y = (self.alpha-self.alpha_star).T * self.kernel(X,self.X_support)
-
-        y = np.sum(y, axis=1) +  self.b
-
-
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        y = (self.alpha-self.alpha_star).T * self.kernel(X, self.X_support)
+        y = np.sum(y, axis=1) + self.b
         return y
